@@ -1,0 +1,6 @@
+.DS_Store
+dist/
+build/
+test-image/
+venv/
+__pycache__/
