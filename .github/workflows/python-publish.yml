@@ -13,7 +13,7 @@ on:
   workflow_dispatch: # Allows manual triggering
 
 permissions:
-  contents: read
+  contents: write # Changed from 'read' to 'write' to allow uploading to releases
 
 jobs:
   build-windows:
@@ -36,11 +36,17 @@ jobs:
         run: |
           python build_app.py
 
-      - name: Upload Windows executable
+      - name: Upload Windows executable as artifact
         uses: actions/upload-artifact@v4
         with:
           name: WatermarkDetector-Windows
           path: dist/WatermarkDetector.exe
+
+      - name: Upload to release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist/WatermarkDetector.exe
 
   build-macos:
     runs-on: macos-latest
@@ -66,10 +72,16 @@ jobs:
         run: |
           hdiutil create -volname "WatermarkDetector Installer" -srcfolder dist/WatermarkDetector.app -ov -format UDZO dist/WatermarkDetector_Installer.dmg
 
-      - name: Upload macOS application
+      - name: Upload macOS application as artifact
         uses: actions/upload-artifact@v4
         with:
           name: WatermarkDetector-macOS
           path: |
             dist/WatermarkDetector.app
             dist/WatermarkDetector_Installer.dmg
+
+      - name: Upload to release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist/WatermarkDetector_Installer.dmg
