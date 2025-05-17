@@ -1,21 +1,29 @@
-name: Build Windows Executable
+# This workflow builds Windows and macOS executables for the Watermark Detector application
+# It creates executables for both platforms and uploads them as artifacts
+
+name: Build Watermark Detector Executables
 
 on:
   push:
-    branches: [master]
+    branches: [main]
   pull_request:
-    branches: [master]
-  workflow_dispatch:
+    branches: [main]
+  release:
+    types: [published]
+  workflow_dispatch: # Allows manual triggering
+
+permissions:
+  contents: read
 
 jobs:
-  build:
+  build-windows:
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: "3.10"
 
@@ -23,14 +31,51 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install pyinstaller
-          pip install -r requirements.txt
+          pip install torch torchvision
+          pip install PyQt5
+          # Add any other dependencies your application needs
 
-      - name: Build executable
+      - name: Build Windows executable
         run: |
           python build_app.py
 
-      - name: Upload executable
-        uses: actions/upload-artifact@v2
+      - name: Upload Windows executable
+        uses: actions/upload-artifact@v4
         with:
           name: WatermarkDetector-Windows
           path: dist/WatermarkDetector.exe
+
+  build-macos:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+          pip install torch torchvision
+          pip install PyQt5
+          # Add any other dependencies your application needs
+
+      - name: Build macOS application
+        run: |
+          python build_app.py
+
+      - name: Create DMG file
+        run: |
+          hdiutil create -volname "WatermarkDetector Installer" -srcfolder dist/WatermarkDetector.app -ov -format UDZO dist/WatermarkDetector_Installer.dmg
+
+      - name: Upload macOS application
+        uses: actions/upload-artifact@v4
+        with:
+          name: WatermarkDetector-macOS
+          path: |
+            dist/WatermarkDetector.app
+            dist/WatermarkDetector_Installer.dmg
